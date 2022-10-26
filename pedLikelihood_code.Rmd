@@ -606,9 +606,9 @@ P(C = (1,0,0,0) | \cup_i F_i)
 \left ( \left (1 - \tau \right ) + \tau \times \left( 1 - \tau \right ) \right )^2] \; +
 \; [0] \; + \; [0] \right \} \\
 &=& \frac{1}{4} \left \{ \frac{1}{2} \times \frac{1}{2} \times 
-[\frac{1}{2} + \frac{1}{2} \times \frac{1}{2}]^2  \; + 
+\left ( \frac{1}{2} + \frac{1}{2} \times \frac{1}{2} \right )^2  \; + 
 \; \frac{1}{2} \times \frac{1}{2} \times 
-[\frac{1}{2} + \frac{1}{2} \times \frac{1}{2}]^2 \right \} \\
+\left(\frac{1}{2} + \frac{1}{2} \times \frac{1}{2}\right)^2 \right \} \\
 &=& .0703125
 \end{eqnarray*}
 
