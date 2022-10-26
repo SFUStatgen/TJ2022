@@ -77,7 +77,8 @@ the data frame into a pedigree object.
 ```{r}
 toyPed = as.data.frame(cbind(id,father,mother,sex,avail, affected))
 
-toyPed_ob = pedigree(toyPed$id, toyPed$father, toyPed$mother, toyPed$sex, affected=cbind(toyPed$affected, toyPed$avail))
+toyPed_ob = pedigree(toyPed$id, toyPed$father, toyPed$mother, toyPed$sex, 
+                     affected=cbind(toyPed$affected, toyPed$avail))
 # Use pedigree() function from the kinship2 package to construct the pedigree object. 
 ```
 
@@ -256,9 +257,17 @@ into the pedigree by the founder with ID 1 is 0.2373. We may
 also get this result by repeated conditioning, also known as the "chain rule" for Bayesian networks.
 
 ```{r}
+p = unlist(querygrain(bn1, nodes = "7", type = "marginal"))
+names(p) = copy 
+p[config["7"]]
+
+
+```
+
+```{r}
 prob=1
 for(n in affs){
-# calculate the marginal probability for the node, n
+# calculate the marginal probability for the node, n 
 p=unlist(querygrain(bn1, nodes=n))
 names(p)=copy
 prob=prob*p[config[n]]
@@ -555,22 +564,53 @@ config1 = c("1", "1", "1", "1")
 names(config1)=c("206","207","211", "214")
 likehd(testPed, 1/2, config1)
 ```
-Check that the answer you get accords with path-counting and show your work in tutorial
-style. 
+Similarly, from the output above, we observe that when the RV configuration is 
+$C = (1,1,1,1)$, the likelihood of $\tau = 1/2$ is about $.0078125$. This likelihood
+value also complies with our hand calculation from the "path counting" approach:
+\begin{eqnarray*}
+P(C=(1,1,1,1) | \cup_i F_i) 
+&=& \frac{1}{4} \left \{  [ \tau^2 \times \tau \times \tau \times \tau^2] \; +  
+\; [ \tau^2 \times \tau \times \tau \times \tau^2] \; + 
+\; [1 \times \tau \times 0 ] \; +
+\; [1 \times 0] \right \} \\
+&=& \frac{1}{4} \left \{  [\tau^6] \; + \; [\tau^6] \; + \; [0] \; + \; [0] \right \} \\
+&=& \frac{1}{4} \left \{  2 \times \left( \frac{1}{2} \right )^6 \right \} \\
+&=& .0078125
+\end{eqnarray*}
 
-config2 = c("1", "0", "1", "1", "1")
-names(config2)=c("201","203","206","207","214")
-likehd(pedfile, 1/2, config2)
 
-Are all these configurations necessary? 
-Maybe pick just one more that is interesting
-to discuss.
-config3 = c("0", "1", "1", "0", "1")
-likehd(pedfile, 1/2, config3)
+Next, we evaluate the likelihood of $\tau = \frac{1}{2}$ when the RV configuration 
+for IDs 206, 207, 211, 214 is $C = (1,0,0,0)$, which indicates that only ID 206
+carries a single copy of the RV.
+```{r}
+# config = c("0", "1", "1", "1")
+# names(config)=c("206","207","211", "214")
+# likehd(testPed, 1/2, config)
+# 
+# config = c("1", "1", "0", "1")
+# names(config)=c("206","207","211", "214")
+# likehd(testPed, 1/2, config)
 
-config4 = c("1", "1", "0", "0", "0")
-likehd(pedfile, 1/2, config4)
-
+config4 = c("1", "0", "0", "0")
+names(config4)=c("206","207","211", "214")
+likehd(testPed, 1/2, config4)
+```
+From the output above, we see that when the RV configuration is C = (1,0,0,0), 
+the likelihood of $\tau = 1/2$ is about $.0703125$. The likelihood value also compiles 
+with our hand calculation from the "path counting" approach: 
+\begin{eqnarray*}
+P(C = (1,0,0,0) | \cup_i F_i) 
+&=& \frac{1}{4} \left \{  [ \tau \times \left ( 1 - \tau \right ) \times 
+\left ( \left (1 - \tau \right ) + \tau \times \left( 1 - \tau \right ) \right )^2] \; +
+\; [ \tau \times \left ( 1 - \tau \right ) \times 
+\left ( \left (1 - \tau \right ) + \tau \times \left( 1 - \tau \right ) \right )^2] \; +
+\; [0] \; + \; [0] \right \} \\
+&=& \frac{1}{4} \left \{ \frac{1}{2} \times \frac{1}{2} \times 
+[\frac{1}{2} + \frac{1}{2} \times \frac{1}{2}]^2  \; + 
+\; \frac{1}{2} \times \frac{1}{2} \times 
+[\frac{1}{2} + \frac{1}{2} \times \frac{1}{2}]^2 \right \} \\
+&=& .0703125
+\end{eqnarray*}
 
 # 5. Likelihood curves
 
@@ -582,8 +622,110 @@ available DNA.
 
 Show how the curve changes for 2-3 of different configurations in the same pedigree. Discuss what you are doing in tutorial style for the reader.
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+We will plot the likelihood curve of the toy pedigree created in Chapter 1 for
+various configurations of the RV status among affected individuals. First, 
+we plot likelihood values VS. a sequence of transmission 
+probability $\tau$ when the RV configuration for IDs 7, 8, and 9 is $C = (1,1,1)$.
+```{r}
+# Create a sequence of tau values
+tau.seq = seq(from = 0, to = 1, by = 0.01)
+
+#first configuration example in the toy pedigree
+config1=c("1","1","1")
+names(config1)=c("7","8","9")
+likehd.vec = c()
+for (p in tau.seq) {
+  likelihood = likehd(toyPed, p, config1)
+  likehd.vec = append(likehd.vec, likelihood)
+}
+
+plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values"
+     ,main = "Likelihood curve when the RV configuration is C = (1,1,1)")
+```
+From the above plot, we observe that when transmission probabilities increase and 
+is greater than 0.6, the likelihood values of all of the affected individuals
+carry a single copy of RV increase rapidly, up to 0.5. 
+
+Next, we plot the likelihood curve when the RV configuration for IDs 7, 8, and 9
+is $C = (1,1,0)$.
+```{r}
+config2=c("1","1","0")
+names(config2)=c("7","8","9")
+likehd.vec = c()
+for (p in tau.seq) {
+  likelihood = likehd(toyPed, p, config2)
+  likehd.vec = append(likehd.vec, likelihood)
+}
+
+plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
+     main = "Likelihood curve when the RV configuration is C = (1,1,0)")
+```
+From the above plot, we see that the likelihood value is at the peak when 
+transmission probability approximately equals to 0.8. Suppose ID 7 and 8 carry 
+the a single copy of RV, the likelihood values has a positive relationship with 
+transmission probability when it's less than 0.8, and has a negative relationship 
+with transmission probability when it's greater than 0.8.
+
+
+Next, we plot the likelihood curve of the Modified Kinship2 pedigree in chapter 4.
+First, we plot the likelihood curve when all four of the affected pedigree members 
+with available DNA carry a single copy of the RV.
+```{r}
+config3 = c("1", "1", "1", "1")
+names(config3)=c("206","207","211", "214")
+likehd.vec = c()
+for (p in tau.seq) {
+  likelihood = likehd(testPed, p, config3)
+  likehd.vec = append(likehd.vec, likelihood)
+}
+
+plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
+     main = "Likelihood curve when the RV configuration is C = (1,1,1,1)")
+```
+From the above plot, we see that the likelihood value increases rapidly when 
+transmission probability is greater than 0.6.
+
+```{r}
+config4 = c("1", "1", "0", "1")
+names(config4)=c("206","207","211", "214")
+likehd.vec = c()
+for (p in tau.seq) {
+  likelihood = likehd(testPed, p, config4)
+  likehd.vec = append(likehd.vec, likelihood)
+}
+
+plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
+     main = "Likelihood curve when the RV configuration is C = (1,1,0,1)")
+
+```
+From the above plot, we observe that the likelihood value reaches the peak value 
+when transmission probability approximately equals to 0.8. Suppose ID 206, 207 
+and 214 carry a single copy of RV, the likelihood values has a positive relationship with 
+transmission probability when it's less than 0.8, and has a negative relationship 
+with transmission probability when it's greater than 0.8.
+
+
+```{r}
+config5 = c("1", "0", "0", "0")
+names(config5)=c("206","207","211", "214")
+likehd.vec = c()
+for (p in tau.seq) {
+  likelihood = likehd(testPed, p, config5)
+  likehd.vec = append(likehd.vec, likelihood)
+}
+plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
+     main = "Likelihood curve when the RV configuration is C = (1,0,0,0)")
+```
+From the above plot, we see that the likelihood values reach the peak value when 
+transmission probability approximately equals to 0.4 and decrease as the 
+transmission probability increases, which indicates that it's less likely for only 
+one of the affected individuals carries the RV as transmission probability becomes 
+larger and larger. 
 
 # References
 Include a short references section in this document.  You should cite the gRain package, cite the kinship2 package, for example.
+
+[1] Højsgaard, S. . (2012). Graphical Independence Networks with the gRain Package for R. Journal of Statistical Software, 46(10), 1–26.
+
+[2] Sinnwell JP, Therneau TM, Schaid DJ. The kinship2 R package for pedigree data. Hum Hered. 2014;78(2):91-3. doi: 10.1159/000363105. Epub 2014 Jul 29. PMID: 25074474; PMCID: PMC4154601.
 
