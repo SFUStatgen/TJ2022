@@ -260,8 +260,6 @@ also get this result by repeated conditioning, also known as the "chain rule" fo
 p = unlist(querygrain(bn1, nodes = "7", type = "marginal"))
 names(p) = copy 
 p[config["7"]]
-
-
 ```
 
 ```{r}
@@ -446,10 +444,11 @@ likehd = function(pedfile, tau, config){
   founders = which(pedfile[, "father"] == 0) 
   # find the row numbers of founders
   founders = as.character(pedfile$id[founders])
-  
+  # find the ID numbers of founders
   affs = which(pedfile[, "affected"] == 1&pedfile[,"avail"]==1) 
   # find the row numbers of affected individuals with DNA available
   affs=as.character(pedfile$id[affs])
+  # find the ID numbers of affected individuals with DNA available
   
   # Assume the RV enters pedigree on exactly one founder and
   # loop through all the founders 
@@ -612,6 +611,50 @@ P(C = (1,0,0,0) | \cup_i F_i)
 &=& .0703125
 \end{eqnarray*}
 
+Next we will consider a modified version of Kinship2 sample pedigree, where it 
+contains the founder which is both affected and has DNA available. 
+```{r}
+# load pedigree data from Kinship2  
+data("sample.ped") #two pedigrees
+testPed1=sample.ped[sample.ped$ped==2,] #2nd pedigree
+testPed1[testPed1$id==203,"affected"]=0
+testPed1[testPed1$id==211,"affected"]=1
+testPed1[testPed1$id==202,"affected"]=0
+testPed1[testPed1$id==201,"avail"]=1
+testPed1[testPed1$id==203,"avail"]=0
+testPed1[testPed1$id==204,"avail"]=0
+testPed1[testPed1$id==212,"avail"]=0
+testPed1 # Unknown affection status has NA
+```
+
+From the above data-frame, we see that founder 201 is affected with DNA available. 
+Based on our previous assumption that RV enters the pedigree through a single 
+founder only, thus the events that exactly one founder introduced the RV are mutually
+exclusive. And the assumption will be violated when other founders introduced the
+RV except ID 201, as well as some configuration settings. 
+
+For example, if the RV configuration is C=(1,1,1,1,1), we assumed only the event
+that ID 201 introduced the RV will be calculated, the conditional probabilities 
+of the configuration given exactly one of the other founders introduced RV will 
+be calculated as zero. Additionally, if the RV configuration is C=(0,1,1,1,1), 
+which conflicts with the event that ID 201 introduced the RV, we assumed this conditional 
+probability will be calculated as zero, and the conditional probabilities of 
+configuration given ID 201 or ID 203, or ID 209 will be calculated as usual. 
+```{r}
+# config = c("1", "1", "1", "1", "1")
+# names(config)=c("201","206","207","211", "214")
+# likehd(testPed1, 1/2, config)
+# 
+# config = c("0", "1", "1", "1", "1")
+# names(config)=c("201","206","207","211", "214")
+# likehd(testPed1, 1/2, config)
+```
+
+However, when we ran the above code, it gives error, we found that when a founder 
+is affected with DNA available, the querygrain() function we used to calculate 
+the marginal distribution of RV status for ID 201 is Null. In this project, we 
+only consider pedigrees with founders either unaffected or affected with DNA unavailable. 
+
 # 5. Likelihood curves
 
 Get the likelihood curve
@@ -642,6 +685,7 @@ for (p in tau.seq) {
 plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values"
      ,main = "Likelihood curve when the RV configuration is C = (1,1,1)")
 ```
+
 From the above plot, we observe that when transmission probabilities increase and 
 is greater than 0.6, the likelihood values of all of the affected individuals
 carry a single copy of RV increase rapidly, up to 0.5. 
@@ -660,6 +704,7 @@ for (p in tau.seq) {
 plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
      main = "Likelihood curve when the RV configuration is C = (1,1,0)")
 ```
+
 From the above plot, we see that the likelihood value is at the peak when 
 transmission probability approximately equals to 0.8. Suppose ID 7 and 8 carry 
 the a single copy of RV, the likelihood values has a positive relationship with 
@@ -682,6 +727,7 @@ for (p in tau.seq) {
 plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
      main = "Likelihood curve when the RV configuration is C = (1,1,1,1)")
 ```
+
 From the above plot, we see that the likelihood value increases rapidly when 
 transmission probability is greater than 0.6.
 
@@ -698,6 +744,7 @@ plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab 
      main = "Likelihood curve when the RV configuration is C = (1,1,0,1)")
 
 ```
+
 From the above plot, we observe that the likelihood value reaches the peak value 
 when transmission probability approximately equals to 0.8. Suppose ID 206, 207 
 and 214 carry a single copy of RV, the likelihood values has a positive relationship with 
@@ -716,6 +763,7 @@ for (p in tau.seq) {
 plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
      main = "Likelihood curve when the RV configuration is C = (1,0,0,0)")
 ```
+
 From the above plot, we see that the likelihood values reach the peak value when 
 transmission probability approximately equals to 0.4 and decrease as the 
 transmission probability increases, which indicates that it's less likely for only 
