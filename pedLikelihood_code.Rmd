@@ -533,7 +533,7 @@ config=c("1","1","0")
 names(config)=c("7","8","9")
 likehd(toyPed, 3/4, config)
 ```
-This values of the likelihood complies with our hand calculation of $\frac{1}{2}\tau^4 (1-\tau)=\frac{1}{2} \left ( \frac{3}{4} \right )^4 \left ( 1 - \frac{3}{4} \right )=0.0396$ from the path-counting approach.
+This value of the likelihood complies with our hand calculation of $\frac{1}{2}\tau^4 (1-\tau)=\frac{1}{2} \left ( \frac{3}{4} \right )^4 \left ( 1 - \frac{3}{4} \right )=0.0396$ from the path-counting approach.
 
 ## 4.2 Modified `kinship2` pedigrees
 
