@@ -31,7 +31,7 @@ library(Rgraphviz)
 library(kinship2)
 ```
 
-The computing in this project relies on Bayesian networks and in particular the `gRain` R package. Explain what `gRain` stands for and how it relates to Bayesian networks. We use `gRain` because it allows us to cast a pedigree as a Bayesian network and more easily calculate transmission-parameter likelihoods.
+The computing in this project relies on Bayesian networks and in particular the `gRain` R package. **TIANYU PLEASE READ: Please try to explain here (i.e. in this spot marked out in bold font) what `gRain` stands for (graphical independence networks) and how graphical independence networks relate to Bayesian networks.** We use `gRain` because it allows us to cast a pedigree as a Bayesian network and more easily calculate transmission-parameter likelihoods.
 We are interested in transmission-parameter likelihoods to evaluate the evidence that 
 a rare variant (RV) is causally linked to
 the disease in the pedigree.
@@ -60,7 +60,8 @@ mother = c(0, 0, 2, 0, 2, 0, 4, 6, 6)
 Next indicate the biological sex, affection status 
 and DNA availability of each individual. In our applications,
 DNA is typically available only from living disease-affected members
-of the pedigree.
+of the pedigree. The living disease-affected members 
+tend to be in the more recent generations of a pedigree, and are typically non-founders. 
 ```{r}
 sex = c(1, 2, 1, 2, 1, 2, 2, 2, 2)
 # 1 represents male, 2 represents female.
@@ -77,7 +78,8 @@ the data frame into a pedigree object.
 ```{r}
 toyPed = as.data.frame(cbind(id,father,mother,sex,avail, affected))
 
-toyPed_ob = pedigree(toyPed$id, toyPed$father, toyPed$mother, toyPed$sex, affected=cbind(toyPed$affected, toyPed$avail))
+toyPed_ob = pedigree(toyPed$id, toyPed$father, toyPed$mother, toyPed$sex, 
+                     affected=cbind(toyPed$affected, toyPed$avail))
 # Use pedigree() function from the kinship2 package to construct the pedigree object. 
 ```
 
@@ -143,7 +145,7 @@ According to the pedigree diagram above, the non-founders are
 IDs 3, 5, 7, 8 and 9. The non-founders with IDs 3 and 5
 are siblings and have parents with IDs 1 and 2.
 The non-founder with ID 7 has parents with IDs 3 and 4.
-Finally, the non-founders with 8 and 9 are siblings and have
+Finally, the non-founders with IDs 8 and 9 are siblings and have
 parents with IDs 5 and 6. In the CPT `formula` argument, the child node comes first after the `~`, followed by the parent nodes,
 because the child's RV status is conditionally 
 dependent on the parents' RV status.
@@ -161,14 +163,16 @@ ID_9.56 = cptable(~9 + 5 + 6, values = child, levels = copy)
 
 We then set up the conditional probability tables for the
 founders of the pedigree. 
+According to the pedigree diagram above, the 
+founders are 
+IDs 1, 2, 4 and 6.
 Since founders have no parents, we specify the
 marginal probability of their RV genotypes in their CPT 
 tables. Our application does not require
-these marginal probabilities but the `gRain` package does.
-We therefore set equal probabilities for the three RV 
-genotypes in founders. 
-According to the pedigree diagram above, the founders are 
-IDs 1, 2, 4 and 6.
+the marginal RV probabilities for the founders 
+but the `gRain` package does.
+We therefore set the three RV 
+genotypes in founders to be equiprobable. 
 
 ```{r}
 # Conditional probability tables for founders.
@@ -209,7 +213,7 @@ is $3^3=27$, corresponding to possible RV-status
 outcomes for the child-parent trios.
 
 We now have a Bayesian network for efficiently
-calculating joint RV probabilities. Being rare, the RV is assumed to enter the pedigree through a single founder, let's say ID 1. 
+calculating joint RV probabilities. Being rare, the RV is assumed to enter the pedigree through a single founder. For illustration, let's assume the founder who introduced the RV into the pedigree is ID 1. 
 The next code chunk calculates the conditional joint probability
 that all three of the affected individuals carry the RV
 given that the founder with ID 1 introduced it into the pedigree. The RV transmission probability is taken
@@ -225,7 +229,8 @@ bn1 = setEvidence(gin1, nodes = c("1", "2", "4", "6"),
 ```
 In Bayesian networks, "evidence" is what is being conditioned on to get the probability. We use the 
 `setEvidence()` function to condition on ID 1
-being the founder who introduced the single copy of RV. The other founders IDs 2, 4, and 6 introduce no copies of the 
+being the founder who introduced the single copy of
+the RV into the pedigree. The other founders IDs 2, 4, and 6 introduce no copies of the 
 RV into the pedigree.
 
 Let's start by getting the marginal
@@ -256,9 +261,15 @@ into the pedigree by the founder with ID 1 is 0.2373. We may
 also get this result by repeated conditioning, also known as the "chain rule" for Bayesian networks.
 
 ```{r}
+p = unlist(querygrain(bn1, nodes = "7", type = "marginal"))
+names(p) = copy 
+p[config["7"]]
+```
+
+```{r}
 prob=1
 for(n in affs){
-# calculate the marginal probability for the node, n
+# calculate the marginal probability for the node, n 
 p=unlist(querygrain(bn1, nodes=n))
 names(p)=copy
 prob=prob*p[config[n]]
@@ -269,12 +280,13 @@ prob
 ```
 The output confirms that the 
 probability that all three of the affected individuals
-carry a single copy of the RV is 0.2373.
+carry a single copy of the RV introduced 
+by ID 1 is 0.2373.
 
 
 # 2. Function to create a Bayesian network
 
-In this section, we present a function to create a Bayesian network for our application. The function takes two arguments:
+In this section, we present a function to create a Bayesian network to be used in our application. The function takes two arguments:
 
 1. A `kinship2` pedigree dataframe, `pedfile`, and
 2. A transmission probability of the RV, `tau`.
@@ -347,7 +359,7 @@ gin = BNcreate(toyPed, 3/4)
 
 Let's check that we get the same summary as in the previous part
 of this document, when 
-we created the network for the toy pedigree interactively.
+we created the Bayesian network for the toy pedigree interactively.
 ```{r}
 summary(gin) #gives same summary as above
 ```
@@ -359,12 +371,14 @@ summary(gin) #gives same summary as above
 This next section describes how to calculate the likelihood
 of a transmission probability in a multiplex 
 pedigree, given data on the RV status of the 
-affected members with available DNA. A multiplex pedigree
+affected members with available DNA and
+assuming that a single founder introduced the
+RV into the pedigree. A multiplex pedigree
 is a pedigree that has been sampled or "ascertained" 
 to contain several
 members (e.g. 3 or more) who
 are affected with the disease of interest.
-Many family studies in genetics rely on this sampling 
+Many family studies in medical genetics rely on this sampling 
 design.
 
 Our goal is to calculate the likelihood of a value
@@ -383,7 +397,7 @@ given that exactly one of the founders introduced
 a single copy of the RV into the pedigree.
 
 The event that exactly one founder introduced the RV is a union of the mutually exclusive events, $F_i$, that each of the founders, 
-$i$, introduced the RV. These events are mutually exclusive because the RV is rare so the chance of more than one founder introducing it is effectively zero. The probability of
+$i$, introduced the RV. These events are mutually exclusive because the chance of more than one founder carrying a RV is essentially zero. The probability of
 the RV configuration $C$ in the affected pedigree members with 
 available DNA is thus 
 \begin{eqnarray*}
@@ -413,7 +427,7 @@ The pedigree-transmission likelihood function takes 3 arguments:
 `pedfile`, `tau` and `config` described below.
 The first argument,`pedfile`,
 is a `kinship2` pedigree object specifying the pedigree structure.
-The second argument, `tau`,  is the transmission probability of RV.
+The second argument, `tau`,  is the transmission probability of the RV.
 The third argument, `config`, is a numeric vector giving the RV status of affected individuals with DNA available. 
 Each element of the
 vector corresponds to an affected pedigree member with DNA. The elements are ordered by their ID numbering. For example, if the affected individuals with available DNA 
@@ -424,9 +438,14 @@ The first step in the likelihood function
 is to call `BNcreate()`
 to set up a Bayesian network for 
 a given value of the transmission probability.
-We assume the RV enters the pedigree on exactly one founder and
-loop through all the founders to condition on this event.
-We then calculate $P({\rm config}  | {\rm founder } i {\rm introduced the RV})$
+We loop through all the founders, and for each
+founder $i$ we calculate $P(\mbox{ config }  | \mbox { founder } i \mbox{ introduced the RV})$,
+the conditional probability 
+of the RV configuration given that the RV enters the pedigree on founder $i$. In the loop, we sum out over
+the product of
+this conditional probability and the probability that
+founder $i$ is the founder who introduced the RV
+to get the desired likelihood from $P(\mbox{ config }  | \mbox { exactly one founder introduced the RV})$.
 ```{r}
 likehd = function(pedfile, tau, config){
   
@@ -437,10 +456,11 @@ likehd = function(pedfile, tau, config){
   founders = which(pedfile[, "father"] == 0) 
   # find the row numbers of founders
   founders = as.character(pedfile$id[founders])
-  
+  # find the ID numbers of founders
   affs = which(pedfile[, "affected"] == 1&pedfile[,"avail"]==1) 
   # find the row numbers of affected individuals with DNA available
   affs=as.character(pedfile$id[affs])
+  # find the ID numbers of affected individuals with DNA available
   
   # Assume the RV enters pedigree on exactly one founder and
   # loop through all the founders 
@@ -458,7 +478,7 @@ likehd = function(pedfile, tau, config){
       if(prob > 0) # prevents conditioning on zero prob events
       { 
         # calculate probability for this node, n   
-        p=unlist(querygrain(bn,nodes=n)) #get marginal prob
+        p=unlist(querygrain(bn,nodes=n,exclude=FALSE)) #get marginal prob
         names(p)=c("0","1","2")
         prob=prob*p[config[n]]
       # condition on node n's state
@@ -488,9 +508,9 @@ config=c("1","1","1")
 names(config)=c("7","8","9")
 likehd(toyPed, 3/4, config)
 ```
-From the output above, we see that when 
+From the output above, we see that, when 
 the RV configuration is $C=(1,1,1)$, the likelihood of $\tau = 3/4$ is about $.1187$.
-This likelihood value complies with our hand calculation from
+This value of the likelihood complies with our hand calculation from
 the "path counting" approach:
 \begin{eqnarray*}
 P(C=(1,1,1) | \cup_i F_i)
@@ -505,24 +525,26 @@ P(C=(1,1,1) | \cup_i F_i)
 
 Next, we evaluate the likelihood of
 $\tau=3/4$ when the RV configuration for
-IDs 7, 8, and 9 is $C=(1,1,0)$
+IDs 7, 8, and 9 is $C=(1,1,0)$. In this configuration,
+IDs 7 and 8 both carry the RV but ID 9 does not.
 
 ```{r}
 config=c("1","1","0")
 names(config)=c("7","8","9")
 likehd(toyPed, 3/4, config)
 ```
-This values complies with our hand calculation of $\frac{1}{2}\tau^4 (1-\tau)=\frac{1}{2} \left ( \frac{3}{4} \right )^4 \left ( 1 - \frac{3}{4} \right )=0.0396$ from the path-counting approach.
+This values of the likelihood complies with our hand calculation of $\frac{1}{2}\tau^4 (1-\tau)=\frac{1}{2} \left ( \frac{3}{4} \right )^4 \left ( 1 - \frac{3}{4} \right )=0.0396$ from the path-counting approach.
 
-## 4.2 Modified kinship2 pedigree
+## 4.2 Modified `kinship2` pedigrees
 
-We will use a modified version
+Consider a modified version
 of the second of the two 
-sample pedigrees in the Kinship2 package.
+sample pedigrees in the `kinship2` R package.
 ```{r}
-# load pedigree data from Kinship2  
+# load kinship2 pedigree data  
 data("sample.ped") #two pedigrees
 testPed=sample.ped[sample.ped$ped==2,] #2nd pedigree
+# modify the kinship2 pedigree data
 testPed[testPed$id==203,"affected"]=0
 testPed[testPed$id==211,"affected"]=1
 testPed[testPed$id==202,"affected"]=0
@@ -555,35 +577,237 @@ config1 = c("1", "1", "1", "1")
 names(config1)=c("206","207","211", "214")
 likehd(testPed, 1/2, config1)
 ```
-Check that the answer you get accords with path-counting and show your work in tutorial
-style. 
+Similarly, from the output above, we observe that, when the RV configuration is 
+$C = (1,1,1,1)$, the likelihood of $\tau = 1/2$ is about $.0078125$. This likelihood
+value also complies with our hand calculation from the "path counting" approach:
+\begin{eqnarray*}
+P(C=(1,1,1,1) | \cup_i F_i) 
+&=& \frac{1}{4} \left \{  [ \tau^2 \times \tau \times \tau \times \tau^2] \; +  
+\; [ \tau^2 \times \tau \times \tau \times \tau^2] \; + 
+\; [1 \times \tau \times 0 ] \; +
+\; [1 \times 0] \right \} \\
+&=& \frac{1}{4} \left \{  [\tau^6] \; + \; [\tau^6] \; + \; [0] \; + \; [0] \right \} \\
+&=& \frac{1}{4} \left \{  2 \times \left( \frac{1}{2} \right )^6 \right \} \\
+&=& .0078125
+\end{eqnarray*}
 
-config2 = c("1", "0", "1", "1", "1")
-names(config2)=c("201","203","206","207","214")
-likehd(pedfile, 1/2, config2)
+Next, we evaluate the likelihood of $\tau = \frac{1}{2}$ when the RV configuration 
+for IDs 206, 207, 211, 214 is $C = (1,0,0,0)$, which indicates that only ID 206
+carries the RV.
+```{r}
+config4 = c("1", "0", "0", "0")
+names(config4)=c("206","207","211", "214")
+likehd(testPed, 1/2, config4)
+```
+From the output above, we see that when the RV configuration is C = (1,0,0,0), 
+the likelihood of $\tau = 1/2$ is about $.0703125$. The likelihood value also complies 
+with our hand calculation from the "path counting" approach: 
+\begin{eqnarray*}
+P(C = (1,0,0,0) | \cup_i F_i) 
+&=& \frac{1}{4} \left \{  [ \tau \times \left ( 1 - \tau \right ) \times 
+\left ( \left (1 - \tau \right ) + \tau \times \left( 1 - \tau \right ) \right )^2] \;\;\;\; + \right. \\
+& & \;\;\;\;\;\;\;\; \left.
+\; [ \tau \times \left ( 1 - \tau \right ) \times 
+\left ( \left (1 - \tau \right ) + \tau \times \left( 1 - \tau \right ) \right )^2] \; +
+\; [0] \; + \; [0] \right \} \\
+&=& \frac{1}{4} \left \{ \frac{1}{2} \times \frac{1}{2} \times 
+\left ( \frac{1}{2} + \frac{1}{2} \times \frac{1}{2} \right )^2  \; + 
+\; \frac{1}{2} \times \frac{1}{2} \times 
+\left(\frac{1}{2} + \frac{1}{2} \times \frac{1}{2}\right)^2 \right \} \\
+&=& .0703125
+\end{eqnarray*}
 
-Are all these configurations necessary? 
-Maybe pick just one more that is interesting
-to discuss.
-config3 = c("0", "1", "1", "0", "1")
-likehd(pedfile, 1/2, config3)
+Next consider `testPed2`, a version of the pedigree above in which the founder with ID 201 has DNA available. 
+```{r}
+testPed2=testPed
+testPed2[testPed2$id==201,"avail"]=1 #Change ID 201
+testPed2
+```
+From the output above, we see that the disease-affected founder with ID 201 now has DNA available. 
 
-config4 = c("1", "1", "0", "0", "0")
-likehd(pedfile, 1/2, config4)
+Let's work through the likelihood calculation when all
+the affected pedigree members with DNA in `testPed2`
+carry the RV. In this case, the RV configuration is 
+$C=(1,1,1,1,1)$ for IDs 201, 206, 207, 211 and 214. 
+This pedigree has four founders with IDs 201, 202, 203
+and 209.
+If ID 201 is the founder introducing the RV, the 
+conditional probability of the configuration is
+$$P(C = (1,1,1,1,1) \, | F_{201}) = 1\times \tau \times 
+\tau \times \tau^2 \times \tau^2 = \tau^6.$$
+If ID 202 is the founder introducing the RV, 
+the conditional probability of the configuration is 
+$$P(C = (1,1,1,1,1) \, | F_{202}) = 0 \times \tau \times 
+\tau \times \tau^2 \times \tau^2 = 0.$$ 
+Similarly, if IDs 203 or 209 are the founders
+introducing
+the RV, the conditional probability of the 
+configuration is zero. Therefore, the likelihood 
+function for the transmission probability 
+is $P(C = (1,1,1,1,1) \, | \cup_i \!{F_i}) =
+\frac{1}{4} \tau^6.$ This 
+likelihood evaluates to $0.00390625$ for $\tau=1/2$,
+as confirmed by the code chunk below:
+```{r}
+config5 = c("1", "1", "1", "1", "1")
+names(config5)=c("201","206","207","211", "214")
+likehd(testPed2, 1/2, config5)
+```
 
+Now suppose the RV configuration is $C=(0,1,1,1,1)$.
+If ID 201 is the founder introducing the RV, the 
+conditional probability of the configuration
+is $P(C = (0,1,1,1,1) \, | F_{201})=0$ because
+ID 201 not carrying the RV 
+conflicts with the conditioning event that
+ID 201 introduced the RV into the pedigree.
+If ID 202 is the founder introducing the RV,
+the conditional probability of the configuration is
+$P(C = (0,1,1,1,1) \, | F_{202})= \tau \times \tau \times \tau^2 \times \tau^2 = \tau^6$.
+If IDs 203 or 209 introduce the RV, the conditional probability of the configuration is 
+$P(C = (0,1,1,1,1) \, | F_{203})=P(C = (0,1,1,1,1) \, | F_{209})=0$. The likelihood function for $\tau$ is 
+therefore, again, 
+$P(C = (0,1,1,1,1) \, | \cup_i \! F_i) =\frac{1}{4} \tau^6$ and evaluates to $0.00390625$ for $\tau=1/2$, 
+as confirmed by the code chunk below:
+```{r}
+config6 = c("0", "1", "1", "1", "1")
+names(config6)=c("201","206","207","211", "214")
+likehd(testPed2, 1/2, config6)
+```
 
 # 5. Likelihood curves
 
-Get the likelihood curve
-by plotting the likelihood values vs. tau values for
-a given configuration of RV status in
-the affected pedigree members with 
-available DNA.
+This section plots likelihood curves for the
+toy pedigree created in section 1 and the 
+modified `kinship2` pedigree created in section 4.2.
 
-Show how the curve changes for 2-3 of different configurations in the same pedigree. Discuss what you are doing in tutorial style for the reader.
+## 5.1 Toy pedigree
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+We start by considering the toy pedigree. First, 
+we plot likelihood values versus a sequence of transmission 
+probabilities, $\tau$, when the RV configuration for IDs 7, 8, and 9 is $C = (1,1,1)$.
+```{r}
+# Create a sequence of tau values
+tau.seq = seq(from = 0, to = 1, by = 0.01)
+
+#first configuration example in the toy pedigree
+config1=c("1","1","1")
+names(config1)=c("7","8","9")
+likehd.vec = c()
+for (p in tau.seq) {
+  likelihood = likehd(toyPed, p, config1)
+  likehd.vec = append(likehd.vec, likelihood)
+}
+
+plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values"
+     ,main = "Likelihood curve when the RV configuration is C = (1,1,1)")
+```
+
+From the above plot, we observe that, for configuration
+$C=(1,1,1)$, the likelihood values increase rapidly once the transmission probability is greater than 0.6, up to a likelihood 
+value of 0.5. The maximum-likelihood estimate of the
+transmission probability is $\hat \tau =1$.
+
+Next, we plot the likelihood curve for 
+RV configuration $C = (1,1,0)$.
+```{r}
+config2=c("1","1","0")
+names(config2)=c("7","8","9")
+likehd.vec = c()
+for (p in tau.seq) {
+  likelihood = likehd(toyPed, p, config2)
+  likehd.vec = append(likehd.vec, likelihood)
+}
+
+plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
+     main = "Likelihood curve when the RV configuration is C = (1,1,0)")
+```
+
+From the above plot, we see that for $C=(1,1,0)$ 
+the likelihood curve
+reaches a peak at a transmission probability of approximately 0.8. 
+Likelihood values increase with the 
+transmission probability when the transmission probability is less than 0.8, 
+and decrease when the transmission probability is greater than 0.8.
+The maximum-likelihood estimate of the 
+transmission probability is thus $\hat \tau \approx 0.8$
+
+## Modified `kinship2` pedigree
+
+Next, we plot two likelihood curves for the 
+first modified `kinship2` pedigree in section 4.2.
+We start by considering the configuration $C=(1,1,1,1)$ when all four of the affected pedigree members 
+with available DNA carry a single copy of the RV.
+```{r}
+config3 = c("1", "1", "1", "1")
+names(config3)=c("206","207","211", "214")
+likehd.vec = c()
+for (p in tau.seq) {
+  likelihood = likehd(testPed, p, config3)
+  likehd.vec = append(likehd.vec, likelihood)
+}
+
+plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
+     main = "Likelihood curve when the RV configuration is C = (1,1,1,1)")
+```
+
+From the above plot, we see that the likelihood values increase rapidly when 
+transmission probability is greater than 0.6.
+The maximum likelihood estimate of the 
+transmission probability in this case is
+$\hat \tau =1$.
+
+Next suppose that we observe the configuration
+$C=(1,1,0,1)$. 
+```{r}
+config4 = c("1", "1", "0", "1")
+names(config4)=c("206","207","211", "214")
+likehd.vec = c()
+for (p in tau.seq) {
+  likelihood = likehd(testPed, p, config4)
+  likehd.vec = append(likehd.vec, likelihood)
+}
+
+plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
+     main = "Likelihood curve when the RV configuration is C = (1,1,0,1)")
+
+```
+
+From the above plot, we observe that the likelihood 
+curve reaches its peak value 
+when the transmission probability is approximately 0.8.  Likelihood values increase with the
+transmission probability when the transmission
+probability is less than 0.8, and decrease 
+when the transmission probability is greater than 0.8.
+The maximum likelihood estimate of the transmission
+probability is therefore $\hat \tau \approx 0.8$.
+
+Finally, let us conclude by considering 
+the configuration $C=(1,0,0,0)$; that is
+ID 206 carries a single copy of the RV 
+and IDs 207, 211 and 214 carry no copies.
+```{r}
+config5 = c("1", "0", "0", "0")
+names(config5)=c("206","207","211", "214")
+likehd.vec = c()
+for (p in tau.seq) {
+  likelihood = likehd(testPed, p, config5)
+  likehd.vec = append(likehd.vec, likelihood)
+}
+plot(tau.seq, likehd.vec, type = "l", xlab = "transmission probabilities", ylab = "likelihood values",
+     main = "Likelihood curve when the RV configuration is C = (1,0,0,0)")
+```
+
+From the above plot, we see that the likelihood 
+curve reaches a peak value when the
+transmission probability is approximately 0.4.
+The maximum likelihood estimate of the 
+transmission probability in this case
+is $\hat \tau \approx 0.4$.
 
 # References
-Include a short references section in this document.  You should cite the gRain package, cite the kinship2 package, for example.
+
+[1] Højsgaard, S. . (2012). Graphical Independence Networks with the gRain Package for R. Journal of Statistical Software, 46(10), 1–26.
+
+[2] Sinnwell JP, Therneau TM, Schaid DJ. The kinship2 R package for pedigree data. Hum Hered. 2014;78(2):91-3. doi: 10.1159/000363105. Epub 2014 Jul 29. PMID: 25074474; PMCID: PMC4154601.
 
