@@ -24,6 +24,24 @@ on Overleaf, to help guide writing).
 * Chapter 4: Conclusions
 * Appendix: Link to GitHub repository with this code.
 
+* What gRain stands for?
+The gRain package we used in this project is built for probability propagation 
+in $gRa$phical $i$ndependence $n$etworks, where Bayesian network is a special instance.
+The graphical independence networks are graphical models of causal interactions 
+among a set of variables, where the variables are represented as nodes in the graph 
+and the interactions among the nodes indicated by the directed edges.
+In our project, The graphical independence networks in gRain package are restricted to comprising 
+discrete variables, each with a finite state space. 
+* How it relates to Bayesian networks?
+Bayesian networks are directed acyclic graphs(DAGs) whose nodes represent variables
+in the Bayesian sense. In our project, our goal is to calculate the joint 
+probability of diseased individuals with DNA available in the family pedigree.
+We consider the structure of family pedigree as a directed graphical model from 
+data, thus we are inspired to cast the pedigree as a Bayesian networks, which 
+means we can convert the pedigree to a graphical independence network and 
+use this gRain R package to compute condition probabilities.
+
+
 In the code chunk below, we load the packages used for Tianyu's summer project.
 ```{r}
 library(gRain)
