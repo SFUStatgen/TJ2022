@@ -1,5 +1,6 @@
 ---
 title: "A pedigree-transmission likelihood for multiplex families"
+date: "`r Sys.Date()`"
 output:
   pdf_document: default
   pdf_notebook: default
@@ -8,51 +9,33 @@ output:
 knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
 
-This document presents a tutorial describing Tianyu's work in summer 2022 to implement a pedigree-transmission likelihood. This summer project will form the core of her Master's thesis which is tentatively
-outlined below. Jinko asks Tianyu to remove this outline 
-from the Rmd document and instead post it to a LaTeX thesis document on Overleaf (perhaps place it at the beginning of the draft thesis
-on Overleaf, to help guide writing). 
+This document presents a tutorial describing Tianyu's work in summer 2022 to implement a pedigree-transmission likelihood. We are interested in transmission-parameter
+likelihoods to evaluate the evidence that a rare variant (RV) is causally linked to the disease in an extended family, or pedigree. To implement the likelihood we use  the `gRain` R package [1] to propagate probability in Bayesian networks. Bayesian networks are a special case of $gRa$phical $i$ndependence $n$etworks. In graphical independence networks, 
+random variables are nodes in a graph 
+and conditional dependencies are edges between nodes,
+allowing a compact representation of 
+the joint probability distribution of the random variables.
+The graphical independence networks in the gRain package are restricted to comprising 
+discrete variables, each with a finite state space.
 
-* Chapter 1: Introduction and background
-    * Pedigrees (e.g. what are founders, what are non-founders, what is a multiplex pedigree,
-    medical genetic studies typically ascertain pedigrees to contain multiple affected relatives to increase the chances that the disease has a genetic cause, a rare variant is a variant with frequency less that 1 percent in the population, often only living affected relatives are genotyped for rare variants to save costs).
-    * Bayesian networks (e.g. what are they, what are their components, introduce the software we will use to set them up and the 
-    features of this software that are relevant to our application.)
-    * Casting a pedigree as a Bayesian network
-* Chapter 2: A pedigree-transmission likelihood
-* Chapter 3: Examples (probably the examples in this tutorial)
-* Chapter 4: Conclusions
-* Appendix: Link to GitHub repository with this code.
+The project's goal is to calculate the joint 
+probability of an RV configuration in the diseased individuals with DNA available in the pedigree.
+A pedigree can be viewed as a **directed** graphical 
+model of the RV status of its members, with the RV
+status of a child depending causally 
+on the RV status of its
+parents. Thus a pedigree can be 
+cast as a Bayesian network,
+a directed acyclic graph.
+We use `gRain` because it allows us to cast a pedigree as a Bayesian network
+and more easily calculate transmission-parameter likelihoods. 
 
-* What gRain stands for?
-The gRain package we used in this project is built for probability propagation 
-in $gRa$phical $i$ndependence $n$etworks, where Bayesian network is a special instance.
-The graphical independence networks are graphical models of causal interactions 
-among a set of variables, where the variables are represented as nodes in the graph 
-and the interactions among the nodes indicated by the directed edges.
-In our project, The graphical independence networks in gRain package are restricted to comprising 
-discrete variables, each with a finite state space. 
-* How it relates to Bayesian networks?
-Bayesian networks are directed acyclic graphs(DAGs) whose nodes represent variables
-in the Bayesian sense. In our project, our goal is to calculate the joint 
-probability of diseased individuals with DNA available in the family pedigree.
-We consider the structure of family pedigree as a directed graphical model from 
-data, thus we are inspired to cast the pedigree as a Bayesian networks, which 
-means we can convert the pedigree to a graphical independence network and 
-use this gRain R package to compute condition probabilities.
-
-
-In the code chunk below, we load the packages used for Tianyu's summer project.
+To start, we load the required packages: `gRain` and the pedigree drawing and manipulation R package `kinship2` [2].
 ```{r}
 library(gRain)
-library(Rgraphviz)
 library(kinship2)
 ```
 
-The computing in this project relies on Bayesian networks and in particular the `gRain` R package. **TIANYU PLEASE READ: Please try to explain here (i.e. in this spot marked out in bold font) what `gRain` stands for (graphical independence networks) and how graphical independence networks relate to Bayesian networks.** We use `gRain` because it allows us to cast a pedigree as a Bayesian network and more easily calculate transmission-parameter likelihoods.
-We are interested in transmission-parameter likelihoods to evaluate the evidence that 
-a rare variant (RV) is causally linked to
-the disease in the pedigree.
 
 # 1. Getting to know the `gRain` package
 
@@ -825,7 +808,7 @@ is $\hat \tau \approx 0.4$.
 
 # References
 
-[1] Højsgaard, S. . (2012). Graphical Independence Networks with the gRain Package for R. Journal of Statistical Software, 46(10), 1–26.
+[1] Højsgaard, S. . (2012). Graphical independence networks with the `gRain` package for R. Journal of Statistical Software, 46(10), 1–26.
 
-[2] Sinnwell JP, Therneau TM, Schaid DJ. The kinship2 R package for pedigree data. Hum Hered. 2014;78(2):91-3. doi: 10.1159/000363105. Epub 2014 Jul 29. PMID: 25074474; PMCID: PMC4154601.
+[2] Sinnwell JP, Therneau TM, Schaid DJ. The `kinship2` R package for pedigree data. Hum Hered. 2014;78(2):91-3. doi: 10.1159/000363105. Epub 2014 Jul 29. PMID: 25074474; PMCID: PMC4154601.
 
