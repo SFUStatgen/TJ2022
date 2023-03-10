@@ -420,8 +420,7 @@ from ID 1 to ID 5, one from ID 5 to ID 8, and
 one transmission of the other variant in ID 5 
 (i.e. the non-RV) to ID 9.
 
-The first step in the likelihood function 
-is to call `BNcreate()`
+The first step in the likelihood function is to call `BNcreate()`
 to set up a Bayesian network for 
 a given value of the transmission probability. 
 The pedigree-transmission likelihood function takes 3 arguments:
@@ -435,10 +434,6 @@ vector corresponds to an affected pedigree member with DNA. The elements are ord
 have ID numbers 1, 3, 6, 7, 14 and `config =c(1, 0, 1, 1, 1)`, 
 IDs 1, 6, 7, 14 carry one copy of the RV and ID 3 carries no copies. 
 
-The first step in the likelihood function 
-is to call `BNcreate()`
-to set up a Bayesian network for 
-a given value of the transmission probability.
 We loop through all the founders, and for each
 founder $i$ we calculate $P(\mbox{ config }  | \mbox { founder } i \mbox{ introduced the RV})$,
 the conditional probability 
