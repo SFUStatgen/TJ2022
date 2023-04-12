@@ -328,13 +328,9 @@ BNcreate = function(pedfile, tau){
    
    pedfile_c = pedfile[-c(founders), ]
    # Pedigree data after removing founders 
-   family_ids = list() 
-   # Store the c(child, father, mother) for debugging
    nonfounders_cpt = list()
-   # Store the CPTs for non-founders(for debugging)
+   # Store the CPTs for non-founders
    for (i in 1:nrow(pedfile_c)) {
-     family_ids[i] = list(c(pedfile_c[i, 'id'], pedfile_c[i, "father"], 
-                            pedfile_c[i, "mother"])) 
      c = pedfile_c[i, 'id'] # id numbers of child
      f = pedfile_c[i, "father"] # id numbers of father
      m = pedfile_c[i, "mother"] # id numbers of mother
